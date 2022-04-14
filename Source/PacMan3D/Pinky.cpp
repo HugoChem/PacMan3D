@@ -20,6 +20,6 @@ void APinky::BeginPlay()
 
 const UMazeTile* APinky::GetChaseTile(const UMazeTile* currentTile)
 {
-	return MazeManager->GetNeighborTile(PacMan->PacTile, PacMan->GetFacingDir(), 2);
+	return MazeManager->GetNeighborTile(PacMan->PacTile, PacMan->GetFacingDir(), PinkyAmbushDistance);
 }
 

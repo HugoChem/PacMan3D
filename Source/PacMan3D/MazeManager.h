@@ -91,15 +91,15 @@ struct PACMAN3D_API MazeNode
 		  Interior		(MazeNodeComposition::Empty)
 	{}
 	
-	explicit MazeNode(const FVector2D& position, const MazeNodeComposition& interior = MazeNodeComposition::Empty)
+	explicit MazeNode(const FVector2D& position, const int rowIndex, const int collumnIndex, const MazeNodeComposition& interior)
 		: Position		(position, 0),
-		  RowIndex		(Position.X / 100),
-		  CollumnIndex	(Position.Y / 100),
+		  RowIndex		(rowIndex),
+		  CollumnIndex	(collumnIndex),
 		  Interior		(interior)
 	{}
 
 	MazeNode(const int rowIndex, const int collumnIndex, const MazeNodeComposition& interior)
-		: Position		(rowIndex * 100, collumnIndex * 100, 0),
+		: Position		(rowIndex * 100.f, collumnIndex * -100.f, 0),
 		  RowIndex		(rowIndex),
 		  CollumnIndex	(collumnIndex),
 		  Interior		(interior)

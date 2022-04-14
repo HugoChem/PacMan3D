@@ -39,7 +39,7 @@ void AMazeManager::ConstructPacMap(TArray<UMazeTile*>& ghostSpawns, APacMan*& pa
 			switch (mazeLine[j])
 			{
 			case '@':
-				Tiles[i][j] = NewObject<UMazeTile>()->Node(MazeNode(CreatePacWall(i, j), MazeNode::Wall)); break;
+				Tiles[i][j] = NewObject<UMazeTile>()->Node(MazeNode(CreatePacWall(i, j), i, j, MazeNode::Wall)); break;
 
 			case 'X':
 				Tiles[i][j] = NewObject<UMazeTile>()->Node(MazeNode(i, j, MazeNode::Wall)); break;
@@ -48,11 +48,11 @@ void AMazeManager::ConstructPacMap(TArray<UMazeTile*>& ghostSpawns, APacMan*& pa
 				Tiles[i][j] = NewObject<UMazeTile>()->Node(MazeNode(i, j, MazeNode::GhostWall)); break;
 
 			case '?':
-				Tiles[i][j] = NewObject<UMazeTile>()->Node(MazeNode(CreateGhostWall(i, j), MazeNode::GhostWall)); break;
+				Tiles[i][j] = NewObject<UMazeTile>()->Node(MazeNode(CreateGhostWall(i, j), i, j, MazeNode::GhostWall)); break;
 
 				
 			case '.':
-				Tiles[i][j] = NewObject<UMazeTile>()->Node(MazeNode(CreatePacDot (i, j), MazeNode::PacDot)); break;
+				Tiles[i][j] = NewObject<UMazeTile>()->Node(MazeNode(CreatePacDot (i, j), i, j, MazeNode::PacDot)); break;
 
 				
 			case 'P':
@@ -63,7 +63,7 @@ void AMazeManager::ConstructPacMap(TArray<UMazeTile*>& ghostSpawns, APacMan*& pa
 
 				
 			case 'G':
-				Tiles[i][j] = NewObject<UMazeTile>()->Node(MazeNode(CreateGhostHouse(i, j), MazeNode::GhostSpawn));
+				Tiles[i][j] = NewObject<UMazeTile>()->Node(MazeNode(CreateGhostHouse(i, j), i, j, MazeNode::GhostSpawn));
 				ghostSpawns.Add(Tiles[i][j]); break;
 
 			case 'g':
@@ -196,10 +196,10 @@ const UMazeTile* AMazeManager::GetNeighborTile (const UMazeTile* origin, const D
 			return Tiles[origin->Node().RowIndex - stepsInDir][origin->Node().CollumnIndex];
 	
 	case Direction::Right:
-		if (origin->Node().CollumnIndex - stepsInDir < 0)
-			return Tiles[origin->Node().RowIndex][0										  ];
+		if (origin->Node().CollumnIndex + stepsInDir >= MazeCollumns)
+			return Tiles[origin->Node().RowIndex][MazeCollumns -1						  ];
 		else
-			return Tiles[origin->Node().RowIndex][origin->Node().CollumnIndex - stepsInDir];
+			return Tiles[origin->Node().RowIndex][origin->Node().CollumnIndex + stepsInDir];
 	
 	case Direction::Down:
 		if (origin->Node().RowIndex + stepsInDir >= MazeRows)
@@ -208,10 +208,10 @@ const UMazeTile* AMazeManager::GetNeighborTile (const UMazeTile* origin, const D
 			return Tiles[origin->Node().RowIndex + stepsInDir][origin->Node().CollumnIndex];
 	
 	case Direction::Left:
-		if (origin->Node().CollumnIndex + stepsInDir >= MazeCollumns)
-			return Tiles[origin->Node().RowIndex][MazeCollumns -1						  ];
+		if (origin->Node().CollumnIndex - stepsInDir < 0)
+			return Tiles[origin->Node().RowIndex][0										  ];
 		else
-			return Tiles[origin->Node().RowIndex][origin->Node().CollumnIndex + stepsInDir];
+			return Tiles[origin->Node().RowIndex][origin->Node().CollumnIndex - stepsInDir];
 
 	default: return nullptr;
 	}

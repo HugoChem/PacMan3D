@@ -13,7 +13,8 @@ class PACMAN3D_API APinky : public AGhostBase
 	GENERATED_BODY()
 
 	static constexpr FLinearColor Pink {1.f, 0.f, 0.5f};
-
+	
+	static constexpr int PinkyAmbushDistance = 3;
 
 protected:
 	virtual void BeginPlay() override;

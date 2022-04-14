@@ -19,7 +19,7 @@ void AClyde::BeginPlay()
 
 const UMazeTile* AClyde::GetChaseTile(const UMazeTile* currentTile)
 {
-	if (FVector::Dist(**currentTile, **PacMan->PacTile) < 800.f)
+	if (FVector::Dist(**currentTile, **PacMan->PacTile) < ScaredDistance)
 	{
 		GhostMaterial->SetVectorParameterValue("GlowColor", FLinearColor::White * 5000);
 

@@ -35,7 +35,7 @@ class PACMAN3D_API AGhostBase : public AActor
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess, ClampMin = 0, UIMax = 5))
 	// Consider this as a "how many tiles per seconds".
-	float Speed = 1.85f;
+	float Speed = 1.5f;
 	
 	// When this reaches 1, it is set back to 0 and the ghost is snapped to the nearest tile.
 	// It is at this point the ghost's core logic determines the new path to take.
@@ -44,9 +44,6 @@ class PACMAN3D_API AGhostBase : public AActor
 	GhostState CurrentState = GhostState::Waiting;
 
 protected:
-	UPROPERTY()
-	const UMazeTile* GhostTile;
-
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, meta=(AllowPrivateAccess))
 	UMaterialInstanceDynamic* GhostMaterial;
 
@@ -71,8 +68,8 @@ protected:
 	Direction::CardinalDirection CurrentDir = Direction::None;
 
 public:
-	const UMazeTile* GetGhostTile() const
-	{ return GhostTile; }
+	UPROPERTY()
+	const UMazeTile* CurrentTile;
 	
 	void SetGhostWaitingTime(const float waitFor)
 	{ SpawnWaitingTime = waitFor; }
@@ -86,6 +83,7 @@ public:
 
 		check(!SpawnTile || !ExitTile || !ScatterTile)
 		SpawnTile = spawnTile, ExitTile = exitTile, ScatterTile = scatterTile;
+		CurrentTile = SpawnTile;
 	}
 
 	
@@ -97,9 +95,9 @@ private:
 	const UMazeTile* SnapToClosestTile();
 
 
-	virtual const UMazeTile* ProcessStatusTile(const UMazeTile* currentTile);
+	virtual const UMazeTile* ProcessStatusTile();
 	
-	virtual const UMazeTile* GetChaseTile(const UMazeTile* currentTile)
+	virtual const UMazeTile* GetChaseTile()
 	{ checkf(false, TEXT("Should not reach here!")); return nullptr; };
 
 

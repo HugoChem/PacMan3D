@@ -4,6 +4,10 @@
 #include "MazeManager.h"
 
 #include "Blinky.h"
+#include "Pinky.h"
+#include "Inky.h"
+#include "Clyde.h"
+
 #include "PacMan.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -58,7 +62,7 @@ void AMazeManager::ConstructPacMap(TArray<UMazeTile*>& ghostSpawns, APacMan*& pa
 			case 'P':
 				Tiles[i][j] = NewObject<UMazeTile>()->Node(MazeNode(i, j, MazeNode::PlayerSpawn));
 				pacMan = PlacePacMan(i, j);
-				pacMan->PacTile = Tiles[i][j];
+				pacMan->CurrentTile = Tiles[i][j];
 				break;
 
 				
@@ -77,6 +81,8 @@ void AMazeManager::ConstructPacMap(TArray<UMazeTile*>& ghostSpawns, APacMan*& pa
 			}
 		}
 	}
+
+	CreateMazeBackground();
 }
 
 void AMazeManager::PlaceGhosts(const TArray<UMazeTile*>& ghostSpawns, const APacMan* pacMan)
@@ -84,26 +90,33 @@ void AMazeManager::PlaceGhosts(const TArray<UMazeTile*>& ghostSpawns, const APac
 	const TArray<const UMazeTile*> corners
 	{ Tiles[0][0], Tiles[0][MazeCollumns -1], Tiles[MazeRows -1][MazeCollumns -1], Tiles[MazeRows -1][0] };
 	
-	TArray<FString> ghosts;
-	FFileHelper::LoadFileToStringArray(ghosts, *(FPaths::ProjectConfigDir() + "Ghosts.ini"));
+	TArray<FString> ghostStrings;
+	FFileHelper::LoadFileToStringArray(ghostStrings, *(FPaths::ProjectConfigDir() + "Ghosts.ini"));
 
 	int scatterCorner = 0; // Max 3 for lower left.
 	int nextGhostSpawn = 0; // Cycles through the ghostSpawns.
 
-	AGhostBase* newGhost;
+	AGhostBase* newGhost = nullptr;
 	
 
-	for (auto it = ghosts.CreateConstIterator(); it; ++it)
+	for (auto it = ghostStrings.CreateConstIterator(); it; ++it)
 	{
 		const UMazeTile* ghostSpawn = ghostSpawns[nextGhostSpawn];
 
-		
-		if		(*it == "Blinky")	newGhost = PlaceAGhost(EGhostType::Blinky,	**ghostSpawn, pacMan);
-		else if (*it == "Pinky")	newGhost = PlaceAGhost(EGhostType::Pinky,	**ghostSpawn, pacMan);
-		//else if (*it == "Inky")		newGhost = PlaceAGhost(EGhostType::Inky,	**ghostSpawn, pacMan);
-		else if (*it == "Clyde")	newGhost = PlaceAGhost(EGhostType::Clyde,	**ghostSpawn, pacMan);
-		
-		else continue;
+		if		(*it == "Blinky")
+			newGhost = PlaceAGhost(EGhostType::Blinky,	**ghostSpawn, pacMan);
+
+		else if (*it == "Pinky")
+			newGhost = PlaceAGhost(EGhostType::Pinky,	**ghostSpawn, pacMan);
+
+		else if (*it == "Inky")
+		{
+			newGhost = PlaceAGhost(EGhostType::Inky,	**ghostSpawn, pacMan);
+			Cast<AInky>(newGhost)->FollowGhost(Ghosts.Last());			
+		}
+
+		else if (*it ==  "Clyde")
+			newGhost = PlaceAGhost(EGhostType::Clyde,	**ghostSpawn, pacMan);
 
 		
 		newGhost->SetGhostInfos(
@@ -114,6 +127,10 @@ void AMazeManager::PlaceGhosts(const TArray<UMazeTile*>& ghostSpawns, const APac
 			corners[scatterCorner]
 			);
 
+		
+		Ghosts.Add(newGhost);
+
+		
 		if (scatterCorner < 3)	scatterCorner++;
 		else					scatterCorner = 0;
 

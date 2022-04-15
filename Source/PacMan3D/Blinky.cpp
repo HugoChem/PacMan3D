@@ -17,7 +17,7 @@ void ABlinky::BeginPlay()
 	GhostMaterial->SetVectorParameterValue("GlowColor", FLinearColor(1000.f, 0.f, 0.f));
 }
 
-const UMazeTile* ABlinky::GetChaseTile(const UMazeTile* currentTile)
+const UMazeTile* ABlinky::GetChaseTile()
 {
-	return PacMan->PacTile;
+	return PacMan->CurrentTile;
 }

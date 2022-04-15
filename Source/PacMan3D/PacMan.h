@@ -37,7 +37,7 @@ public:
 	
 	UPROPERTY()
 	// Last known tile PacMan was on.
-	const UMazeTile* PacTile;
+	const UMazeTile* CurrentTile;
 	
 	//The direction the player is facing
 	Direction::CardinalDirection GetFacingDir() const

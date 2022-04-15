@@ -91,8 +91,8 @@ struct PACMAN3D_API MazeNode
 		  Interior		(MazeNodeComposition::Empty)
 	{}
 	
-	explicit MazeNode(const FVector2D& position, const int rowIndex, const int collumnIndex, const MazeNodeComposition& interior)
-		: Position		(position, 0),
+	MazeNode(const FVector& position, const int rowIndex, const int collumnIndex, const MazeNodeComposition& interior)
+		: Position		(position.X, position.Y, 0),
 		  RowIndex		(rowIndex),
 		  CollumnIndex	(collumnIndex),
 		  Interior		(interior)
@@ -170,9 +170,18 @@ class PACMAN3D_API AMazeManager : public AActor
 
 	UPROPERTY(VisibleAnywhere)
 	USceneComponent* MazeManagerRoot;
+
 	
-	int MazeRows = 0, MazeCollumns = 0;
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, meta=(AllowPrivateAccess))
+	int MazeRows = 0;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, meta=(AllowPrivateAccess))
+	int MazeCollumns = 0;
+
+	
 	TUniquePtr<TUniquePtr<UMazeTile*[]>[]> Tiles;
+
+	TArray<class AGhostBase*> Ghosts;
 
 public:
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere)
@@ -191,21 +200,25 @@ protected:
 	virtual void BeginPlay() override;
 
 	UFUNCTION(BlueprintImplementableEvent)
-	FVector2D CreatePacWall(int row, int collumn);
+	FVector CreatePacWall(int row, int collumn);
 
 	UFUNCTION(BlueprintImplementableEvent)
-	FVector2D CreateGhostWall(int row, int collumn);
+	// To be called after the all the tiles were placed.
+	void CreateMazeBackground();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	FVector CreateGhostWall(int row, int collumn);
 
 
 	UFUNCTION(BlueprintImplementableEvent)
-	FVector2D CreateGhostHouse(int row, int collumn);
+	FVector CreateGhostHouse(int row, int collumn);
 
 	
 	UFUNCTION(BlueprintImplementableEvent)
-	FVector2D CreatePacDot(int row, int collumn);
+	FVector CreatePacDot(int row, int collumn);
 
 	UFUNCTION(BlueprintImplementableEvent)
-	FVector2D CreatePowerPellet(int row, int collumn);
+	FVector CreatePowerPellet(int row, int collumn);
 	
 
 	UFUNCTION(BlueprintImplementableEvent)

@@ -21,7 +21,7 @@ const UMazeTile* APacMan::SnapAndMove()
 	const UMazeTile* currentTile = MazeManager->GetNearestTile(GetActorLocation());
 	SetActorLocation(**currentTile);
 
-	PacTile = currentTile;
+	CurrentTile = currentTile;
 	TileProgress = 0;
 
 	constexpr int impassableNodes = MazeNode::Wall | MazeNode::GhostWall | MazeNode::SpawnerExit;

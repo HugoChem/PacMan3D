@@ -4,7 +4,6 @@
 #include "GhostBase.h"
 #include "GameFramework/RotatingMovementComponent.h"
 
-
 // Sets default values
 AGhostBase::AGhostBase()
 {
@@ -43,35 +42,33 @@ const UMazeTile* AGhostBase::SnapToClosestTile()
 	TileProgress = 0;
 
 	check(currentTile)
-	GhostTile = currentTile;
+	CurrentTile = currentTile;
 	return currentTile;
 }
 
-const UMazeTile* AGhostBase::ProcessStatusTile(const UMazeTile* currentTile)
+const UMazeTile* AGhostBase::ProcessStatusTile()
 {
-	check(currentTile != nullptr)
-	
 	switch (CurrentState)
 	{
 	case GhostState::Waiting: return SpawnTile;
 
 	case GhostState::Exiting:
-		if (currentTile == ExitTile)
+		if (CurrentTile == ExitTile)
 		{
 			CurrentState = GhostState::Chase;
-			return GetChaseTile(currentTile);
+			return GetChaseTile();
 		}
 		else return ExitTile;
 
 		
-	case GhostState::Chase:			return GetChaseTile(currentTile);
+	case GhostState::Chase:			return GetChaseTile();
 	case GhostState::Scatter:		return ScatterTile;
 
 	case GhostState::Frightened:	return nullptr;
 
 
 	case GhostState::Eaten:
-		if (currentTile == SpawnTile)
+		if (CurrentTile == SpawnTile)
 		{
 			CurrentState = GhostState::Exiting;
 			CurrentDir = Direction::None;
@@ -105,16 +102,16 @@ bool AGhostBase::CountDownSpawnTimer(const float deltaTime)
 
 Direction::CardinalDirection AGhostBase::DetermineNewDirection()
 {
-	const UMazeTile* target = ProcessStatusTile(GhostTile);
+	const UMazeTile* target = ProcessStatusTile();
 	
 
 	float closestDirDistToTarget = MAX_FLT;
 	Direction::CardinalDirection closestDirToTarget = !CurrentDir;
 
 
-	const UMazeTile* frontTile	= MazeManager->GetNeighborTile(GhostTile, CurrentDir);
-	const UMazeTile* rightTile	= MazeManager->GetNeighborTile(GhostTile, CurrentDir++);
-	const UMazeTile* leftTile	= MazeManager->GetNeighborTile(GhostTile, --CurrentDir);
+	const UMazeTile* frontTile	= MazeManager->GetNeighborTile(CurrentTile, CurrentDir);
+	const UMazeTile* rightTile	= MazeManager->GetNeighborTile(CurrentTile, CurrentDir++);
+	const UMazeTile* leftTile	= MazeManager->GetNeighborTile(CurrentTile, --CurrentDir);
 	
 	const int tilesToAvoid = MazeNode::Wall | MazeNode::MagicWall | (CurrentState == GhostState::Exiting ? 0 : MazeNode::SpawnerExit); 
 
@@ -153,7 +150,7 @@ Direction::CardinalDirection AGhostBase::DetermineNewDirection()
 Direction::CardinalDirection AGhostBase::DetermineStartingDirection()
 {
 	const UMazeTile* currentTile = MazeManager->GetNearestTile(GetActorLocation());
-	const UMazeTile* target = ProcessStatusTile(currentTile);
+	const UMazeTile* target = ProcessStatusTile();
 
 	float closestDirDistToTarget = MAX_FLT;
 	Direction::CardinalDirection closestDirToTarget = !CurrentDir;

@@ -22,5 +22,5 @@ class PACMAN3D_API AClyde : public AGhostBase
 protected:
 	virtual void BeginPlay() override;
 	
-	virtual const UMazeTile* GetChaseTile(const UMazeTile* currentTile) override;
+	virtual const UMazeTile* GetChaseTile() override;
 };

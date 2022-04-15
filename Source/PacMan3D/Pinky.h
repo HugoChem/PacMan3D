@@ -14,10 +14,10 @@ class PACMAN3D_API APinky : public AGhostBase
 
 	static constexpr FLinearColor Pink {1.f, 0.f, 0.5f};
 	
-	static constexpr int PinkyAmbushDistance = 3;
+	static constexpr int PinkyAmbushDistance = 4;
 
 protected:
 	virtual void BeginPlay() override;
 	
-	virtual const UMazeTile* GetChaseTile(const UMazeTile* currentTile) override;
+	virtual const UMazeTile* GetChaseTile() override;
 };

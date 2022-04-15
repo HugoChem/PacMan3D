@@ -11,9 +11,15 @@ UCLASS()
 class PACMAN3D_API AInky : public AGhostBase
 {
 	GENERATED_BODY()
+	
+	const AGhostBase* LeaderGhost;
 
 protected:
 	virtual void BeginPlay() override;
 	
-	virtual const UMazeTile* GetChaseTile(const UMazeTile* currentTile) override;
+	virtual const UMazeTile* GetChaseTile() override;
+
+public:
+	void FollowGhost(const AGhostBase* leaderGhost)
+	{ LeaderGhost = leaderGhost; }
 };

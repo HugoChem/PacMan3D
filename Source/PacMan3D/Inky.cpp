@@ -3,6 +3,8 @@
 
 #include "Inky.h"
 
+#include "PacMan.h"
+
 void AInky::BeginPlay()
 {
 	Super::BeginPlay();
@@ -16,7 +18,9 @@ void AInky::BeginPlay()
 	GhostMaterial->SetVectorParameterValue("GlowColor", cyan * 1000);
 }
 
-const UMazeTile* AInky::GetChaseTile(const UMazeTile* currentTile)
+const UMazeTile* AInky::GetChaseTile()
 {
-	return nullptr;
+	const UMazeTile* pivotTile = MazeManager->GetNeighborTile(PacMan->CurrentTile, PacMan->GetFacingDir(), 2);
+
+	return MazeManager->GetNearestTile(**pivotTile + (**pivotTile - **LeaderGhost->CurrentTile));
 }

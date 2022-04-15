@@ -15,6 +15,6 @@ class PACMAN3D_API ABlinky : public AGhostBase
 protected:
 	virtual void BeginPlay() override;
 	
-	virtual const UMazeTile* GetChaseTile(const UMazeTile* currentTile) override;
+	virtual const UMazeTile* GetChaseTile() override;
 	
 };

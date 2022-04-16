@@ -10,7 +10,7 @@
  * 
  */
 UCLASS()
-class PACMAN3D_API AClyde : public AGhostBase
+class NEOPACMAN3D_API AClyde : public AGhostBase
 {
 	GENERATED_BODY()
 

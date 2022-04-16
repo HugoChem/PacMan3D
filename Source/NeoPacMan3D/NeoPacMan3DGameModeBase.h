@@ -4,13 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
-#include "PacMan3DGameModeBase.generated.h"
+#include "NeoPacMan3DGameModeBase.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class PACMAN3D_API APacMan3DGameModeBase : public AGameModeBase
+class NEOPACMAN3D_API ANeoPacMan3DGameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
 	

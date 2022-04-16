@@ -14,7 +14,7 @@ void AClyde::BeginPlay()
 	GhostMaterial->SetVectorParameterValue("GrooveColor", Orange);
 	GhostMaterial->SetVectorParameterValue("TrimColor", Orange);
 
-	GhostMaterial->SetVectorParameterValue("GlowColor", Orange * 1000);
+	GhostMaterial->SetVectorParameterValue("GlowColor", Orange * 3000);
 }
 
 const UMazeTile* AClyde::GetChaseTile()

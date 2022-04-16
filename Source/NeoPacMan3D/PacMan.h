@@ -11,7 +11,7 @@
 
 
 UCLASS()
-class PACMAN3D_API APacMan : public APawn
+class NEOPACMAN3D_API APacMan : public APawn
 {
 	GENERATED_BODY()
 

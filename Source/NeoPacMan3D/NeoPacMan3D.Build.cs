@@ -2,9 +2,9 @@
 
 using UnrealBuildTool;
 
-public class PacMan3D : ModuleRules
+public class NeoPacMan3D : ModuleRules
 {
-	public PacMan3D(ReadOnlyTargetRules Target) : base(Target)
+	public NeoPacMan3D(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	

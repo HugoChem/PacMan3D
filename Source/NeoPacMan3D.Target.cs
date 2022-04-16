@@ -3,12 +3,12 @@
 using UnrealBuildTool;
 using System.Collections.Generic;
 
-public class PacMan3DTarget : TargetRules
+public class NeoPacMan3DTarget : TargetRules
 {
-	public PacMan3DTarget( TargetInfo Target) : base(Target)
+	public NeoPacMan3DTarget( TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Game;
 		DefaultBuildSettings = BuildSettingsVersion.V2;
-		ExtraModuleNames.AddRange( new string[] { "PacMan3D" } );
+		ExtraModuleNames.AddRange( new string[] { "NeoPacMan3D" } );
 	}
 }

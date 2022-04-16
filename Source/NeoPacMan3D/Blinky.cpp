@@ -14,7 +14,7 @@ void ABlinky::BeginPlay()
 	GhostMaterial->SetVectorParameterValue("GrooveColor", FLinearColor::Red);
 	GhostMaterial->SetVectorParameterValue("TrimColor", FLinearColor::Red);
 
-	GhostMaterial->SetVectorParameterValue("GlowColor", FLinearColor(1000.f, 0.f, 0.f));
+	GhostMaterial->SetVectorParameterValue("GlowColor", FLinearColor::Red * 100000.0);
 }
 
 const UMazeTile* ABlinky::GetChaseTile()

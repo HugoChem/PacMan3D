@@ -58,7 +58,7 @@ UENUM()
 enum class EGhostType : uint8 { Blinky, Pinky, Inky, Clyde };
 
 
-struct PACMAN3D_API MazeNode
+struct NEOPACMAN3D_API MazeNode
 {
 	FVector Position;
 
@@ -132,7 +132,7 @@ struct PACMAN3D_API MazeNode
 };
 
 UCLASS()
-class PACMAN3D_API UMazeTile : public UClass
+class NEOPACMAN3D_API UMazeTile : public UClass
 {
 	GENERATED_BODY()
 	
@@ -164,7 +164,7 @@ public:
 
 
 UCLASS()
-class PACMAN3D_API AMazeManager : public AActor
+class NEOPACMAN3D_API AMazeManager : public AActor
 {
 	GENERATED_BODY()
 

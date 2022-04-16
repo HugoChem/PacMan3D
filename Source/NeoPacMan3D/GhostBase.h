@@ -14,7 +14,7 @@ enum class GhostState { Waiting, Exiting, Chase, Scatter, Frightened, Eaten };
 
 
 UCLASS(Abstract)
-class PACMAN3D_API AGhostBase : public AActor
+class NEOPACMAN3D_API AGhostBase : public AActor
 {
 	GENERATED_BODY()
 

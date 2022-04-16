@@ -4,17 +4,22 @@
 
 #include "CoreMinimal.h"
 #include "GhostBase.h"
-#include "Blinky.generated.h"
+#include "Inky.generated.h"
 
 
 UCLASS()
-class PACMAN3D_API ABlinky : public AGhostBase
+class NEOPACMAN3D_API AInky : public AGhostBase
 {
 	GENERATED_BODY()
+	
+	const AGhostBase* LeaderGhost;
 
 protected:
 	virtual void BeginPlay() override;
 	
 	virtual const UMazeTile* GetChaseTile() override;
-	
+
+public:
+	void FollowGhost(const AGhostBase* leaderGhost)
+	{ LeaderGhost = leaderGhost; }
 };

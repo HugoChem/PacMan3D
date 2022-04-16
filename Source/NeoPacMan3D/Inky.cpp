@@ -15,7 +15,7 @@ void AInky::BeginPlay()
 	GhostMaterial->SetVectorParameterValue("GrooveColor", cyan);
 	GhostMaterial->SetVectorParameterValue("TrimColor", cyan);
 
-	GhostMaterial->SetVectorParameterValue("GlowColor", cyan * 1000);
+	GhostMaterial->SetVectorParameterValue("GlowColor", cyan * 3000);
 }
 
 const UMazeTile* AInky::GetChaseTile()

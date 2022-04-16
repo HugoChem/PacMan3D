@@ -14,7 +14,7 @@ void APinky::BeginPlay()
 	GhostMaterial->SetVectorParameterValue("GrooveColor", Pink);
 	GhostMaterial->SetVectorParameterValue("TrimColor", Pink);
 
-	GhostMaterial->SetVectorParameterValue("GlowColor", Pink * 1000);
+	GhostMaterial->SetVectorParameterValue("GlowColor", Pink * 3000);
 }
 
 

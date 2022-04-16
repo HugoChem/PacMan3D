@@ -3,12 +3,12 @@
 using UnrealBuildTool;
 using System.Collections.Generic;
 
-public class PacMan3DEditorTarget : TargetRules
+public class NeoPacMan3DEditorTarget : TargetRules
 {
-	public PacMan3DEditorTarget( TargetInfo Target) : base(Target)
+	public NeoPacMan3DEditorTarget( TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Editor;
 		DefaultBuildSettings = BuildSettingsVersion.V2;
-		ExtraModuleNames.AddRange( new string[] { "PacMan3D" } );
+		ExtraModuleNames.AddRange( new string[] { "NeoPacMan3D" } );
 	}
 }

@@ -8,7 +8,7 @@
 
 
 UCLASS()
-class PACMAN3D_API APinky : public AGhostBase
+class NEOPACMAN3D_API APinky : public AGhostBase
 {
 	GENERATED_BODY()
 

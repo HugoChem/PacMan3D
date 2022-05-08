@@ -16,8 +16,9 @@ class NEOPACMAN3D_API APinky : public AGhostBase
 	
 	static constexpr int PinkyAmbushDistance = 4;
 
+private:
+	virtual void SetGhostProperties(bool reinstanceMaterial) override;
+
 protected:
-	virtual void BeginPlay() override;
-	
 	virtual const UMazeTile* GetChaseTile() override;
 };

@@ -84,39 +84,47 @@ struct NEOPACMAN3D_API MazeNode
 	MazeNodeComposition Interior;
 
 	
+	class AStaticMeshActor* MeshActor;
+
+	
 	MazeNode()
-		: Position		(0),
+		: Position		(FVector::ZeroVector),
 		  RowIndex		(0),
 		  CollumnIndex	(0),
-		  Interior		(MazeNodeComposition::Empty)
-	{}
-	
-	MazeNode(const FVector& position, const int rowIndex, const int collumnIndex, const MazeNodeComposition& interior)
-		: Position		(position.X, position.Y, 0),
-		  RowIndex		(rowIndex),
-		  CollumnIndex	(collumnIndex),
-		  Interior		(interior)
+		  Interior		(Empty),
+		  MeshActor		(nullptr)
 	{}
 
-	MazeNode(const int rowIndex, const int collumnIndex, const MazeNodeComposition& interior)
-		: Position		(rowIndex * 100.f, collumnIndex * -100.f, 0),
-		  RowIndex		(rowIndex),
-		  CollumnIndex	(collumnIndex),
-		  Interior		(interior)
+	MazeNode(const int rI, const int cI, const MazeNodeComposition& interior)
+		: Position		(rI * 100.f, cI * -100.f, 0),
+		  RowIndex		(rI),
+		  CollumnIndex	(cI),
+		  Interior		(interior),
+		  MeshActor		(nullptr)
+	{}
+
+	MazeNode(const int rI, const int cI, const MazeNodeComposition& interior, class AStaticMeshActor* meshActor)
+		: Position		(rI * 100.f, cI * -100.f, 0),
+		  RowIndex		(rI),
+		  CollumnIndex	(cI),
+		  Interior		(interior),
+		  MeshActor		(meshActor)
 	{}
 
 	MazeNode(const MazeNode& nodeOrigin)
 		: Position		(nodeOrigin.Position),
 		  RowIndex		(nodeOrigin.RowIndex),
 		  CollumnIndex	(nodeOrigin.CollumnIndex),
-		  Interior		(nodeOrigin.Interior)
+		  Interior		(nodeOrigin.Interior),
+		  MeshActor		(nodeOrigin.MeshActor)
 	{}
 
 	MazeNode(MazeNode&& nodeOrigin) noexcept
 		: Position		(nodeOrigin.Position),
 		  RowIndex		(nodeOrigin.RowIndex),
 		  CollumnIndex	(nodeOrigin.CollumnIndex),
-		  Interior		(nodeOrigin.Interior)
+		  Interior		(nodeOrigin.Interior),
+		  MeshActor		(nodeOrigin.MeshActor)
 	{}
 
 	
@@ -126,6 +134,7 @@ struct NEOPACMAN3D_API MazeNode
 		RowIndex		= nodeCopy.RowIndex;
 		CollumnIndex	= nodeCopy.CollumnIndex;
 		Interior		= nodeCopy.Interior;
+		MeshActor		= nodeCopy.MeshActor;
 
 		return *this;
 	}
@@ -160,6 +169,10 @@ public:
 		return	Intern.RowIndex		== other.Intern.RowIndex
 		&&		Intern.CollumnIndex == other.Intern.CollumnIndex;
 	}
+
+
+	// Clears any static mesh associated and sets the interior to nothing.
+	void Empty();
 };
 
 
@@ -195,37 +208,47 @@ private:
 
 	void PlaceGhosts(const TArray<UMazeTile*>& ghostSpawns, const class APacMan* pacMan);
 
+	void RefineWalls();
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	UFUNCTION(BlueprintImplementableEvent)
-	FVector CreatePacWall(int row, int collumn);
+	UFUNCTION(BlueprintCallable, Category = "Utilitary")
+	static FVector IndexToVector(int row, int collumn)
+	{ return {row * 100.f, collumn * -100.f, 0.f}; }
 
-	UFUNCTION(BlueprintImplementableEvent)
+	UFUNCTION(BlueprintImplementableEvent, Category = "Walls")
+	class AStaticMeshActor* CreatePacWall(const FVector& pos);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Walls")
+	class AStaticMeshActor* CreateGhostWall(const FVector& pos);
+
+	
+	UFUNCTION(BlueprintImplementableEvent, Category = "Utilitary")
 	// To be called after the all the tiles were placed.
 	void CreateMazeBackground();
-
-	UFUNCTION(BlueprintImplementableEvent)
-	FVector CreateGhostWall(int row, int collumn);
-
-
-	UFUNCTION(BlueprintImplementableEvent)
-	FVector CreateGhostHouse(int row, int collumn);
-
-	
-	UFUNCTION(BlueprintImplementableEvent)
-	FVector CreatePacDot(int row, int collumn);
-
-	UFUNCTION(BlueprintImplementableEvent)
-	FVector CreatePowerPellet(int row, int collumn);
 	
 
-	UFUNCTION(BlueprintImplementableEvent)
-	class APacMan* PlacePacMan(int row, int collumn);
+	UFUNCTION(BlueprintImplementableEvent, Category = "Ghosts")
+	void CreateLittleGhostHouse(const FVector& pos);
 
-	UFUNCTION(BlueprintImplementableEvent)
-	class AGhostBase* PlaceAGhost(EGhostType newGhostClass, FVector spawnPlace, const class APacMan* pacMan);
+	UFUNCTION(BlueprintImplementableEvent, Category = "Ghosts")
+	void CreateBigGhostHouse(const FVector& pos);
+
+	
+	UFUNCTION(BlueprintImplementableEvent, Category = "Dots")
+	class AStaticMeshActor* CreatePacDot(const FVector& pos);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Dots")
+	class AStaticMeshActor* CreatePowerPellet(const FVector& pos);
+	
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "PacMan")
+	class APacMan* PlacePacMan(const FVector& pos, bool offset);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Ghosts")
+	class AGhostBase* PlaceAGhost(EGhostType newGhostClass, const FVector& pos, const class APacMan* pacMan);
 
 public:
 	const UMazeTile* GetNearestTile			(const FVector& nearestTo) const;
@@ -233,5 +256,8 @@ public:
 	const UMazeTile* GetNearestTileOfType	(const FVector& nearestTo, MazeNode::MazeNodeComposition targetType) const;
 
 	const UMazeTile* GetNeighborTile		(const UMazeTile* origin, const Direction::CardinalDirection& direction, const int stepsInDir = 1) const;
+
+
+	void EmptyTile(const UMazeTile* targetTile) const;
 };
 

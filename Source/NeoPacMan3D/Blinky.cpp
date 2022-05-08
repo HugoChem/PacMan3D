@@ -5,19 +5,24 @@
 
 #include "PacMan.h"
 
+#include "GameFramework/RotatingMovementComponent.h"
 
-void ABlinky::BeginPlay()
+
+void ABlinky::SetGhostProperties(const bool reinstanceMaterial)
 {
-	Super::BeginPlay();
-
+	if (reinstanceMaterial)
+		GhostMaterial = GhostMaterial = PyramidMesh->CreateDynamicMaterialInstance(0, OriginalMaterial);
+	
 	GhostMaterial->SetVectorParameterValue("FloorColor", FLinearColor::Red);
 	GhostMaterial->SetVectorParameterValue("GrooveColor", FLinearColor::Red);
 	GhostMaterial->SetVectorParameterValue("TrimColor", FLinearColor::Red);
 
-	GhostMaterial->SetVectorParameterValue("GlowColor", FLinearColor::Red * 100000.0);
+	GhostMaterial->SetVectorParameterValue("GlowColor", FLinearColor::Red * 3000.f);
+
+	Rotator->RotationRate = { 0, 60, 0 };
 }
 
 const UMazeTile* ABlinky::GetChaseTile()
 {
-	return PacMan->CurrentTile;
+	return PacMan->GetCurrentTile();
 }

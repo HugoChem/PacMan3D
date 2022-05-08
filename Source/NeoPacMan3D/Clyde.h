@@ -18,9 +18,10 @@ class NEOPACMAN3D_API AClyde : public AGhostBase
 	//static constexpr FLinearColor Yellish = {1.f, 1.0f, 0.5f};
 
 	static constexpr float ScaredDistance = 400.f;
+
+private:
+	virtual void SetGhostProperties(bool reinstanceMaterial) override;
 	
 protected:
-	virtual void BeginPlay() override;
-	
 	virtual const UMazeTile* GetChaseTile() override;
 };

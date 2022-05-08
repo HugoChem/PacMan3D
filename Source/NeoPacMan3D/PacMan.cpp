@@ -3,11 +3,20 @@
 
 #include "PacMan.h"
 
+#include "Kismet/GameplayStatics.h"
+
 // Sets default values
 APacMan::APacMan()
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
+	static ConstructorHelpers::FObjectFinder<USoundWave> munch1(TEXT("/Game/Sounds/munch_1.munch_1"));
+	if (munch1.Succeeded()) Munch1 = munch1.Object;
+	
+	static ConstructorHelpers::FObjectFinder<USoundWave> munch2(TEXT("/Game/Sounds/munch_2.munch_2"));
+	if (munch2.Succeeded()) Munch2 = munch2.Object;
+
 }
 
 // Called when the game starts or when spawned
@@ -24,6 +33,20 @@ const UMazeTile* APacMan::SnapAndMove()
 	CurrentTile = currentTile;
 	TileProgress = 0;
 
+	if (CurrentTile->Node().Interior & (MazeNode::PacDot | MazeNode::PowerPellet))
+	{
+		MazeManager->EmptyTile(CurrentTile);
+
+		
+		if (MunchFlip)
+			UGameplayStatics::PlaySound2D(this, Munch2);
+		else
+			UGameplayStatics::PlaySound2D(this, Munch1);
+
+		MunchFlip = !MunchFlip;
+	}
+
+	
 	constexpr int impassableNodes = MazeNode::Wall | MazeNode::GhostWall | MazeNode::SpawnerExit;
 	
 	if		( (MazeManager->GetNeighborTile(currentTile, NextDir)->Node().Interior & impassableNodes ) == 0 )

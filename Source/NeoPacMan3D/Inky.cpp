@@ -5,22 +5,26 @@
 
 #include "PacMan.h"
 
-void AInky::BeginPlay()
+#include "GameFramework/RotatingMovementComponent.h"
+
+
+void AInky::SetGhostProperties(const bool reinstanceMaterial)
 {
-	Super::BeginPlay();
+	if (reinstanceMaterial)
+		GhostMaterial = GhostMaterial = PyramidMesh->CreateDynamicMaterialInstance(0, OriginalMaterial);
 
-	constexpr FLinearColor cyan(0.f, 1.f, 1.f);
-	
-	GhostMaterial->SetVectorParameterValue("FloorColor", cyan);
-	GhostMaterial->SetVectorParameterValue("GrooveColor", cyan);
-	GhostMaterial->SetVectorParameterValue("TrimColor", cyan);
+	GhostMaterial->SetVectorParameterValue("FloorColor", Cyan);
+	GhostMaterial->SetVectorParameterValue("GrooveColor", Cyan);
+	GhostMaterial->SetVectorParameterValue("TrimColor", Cyan);
 
-	GhostMaterial->SetVectorParameterValue("GlowColor", cyan * 3000);
+	GhostMaterial->SetVectorParameterValue("GlowColor", Cyan * 3000.f);
+
+	Rotator->RotationRate = { 0, 60, 0 };
 }
 
 const UMazeTile* AInky::GetChaseTile()
 {
-	const UMazeTile* pivotTile = MazeManager->GetNeighborTile(PacMan->CurrentTile, PacMan->GetFacingDir(), 2);
+	const UMazeTile* pivotTile = MazeManager->GetNeighborTile(PacMan->GetCurrentTile(), PacMan->GetFacingDir(), 2);
 
 	return MazeManager->GetNearestTile(**pivotTile + (**pivotTile - **LeaderGhost->CurrentTile));
 }

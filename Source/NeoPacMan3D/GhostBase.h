@@ -22,31 +22,47 @@ class NEOPACMAN3D_API AGhostBase : public AActor
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
 	USceneComponent* Root;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
-	UStaticMeshComponent* PyramidMesh;
-	
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
-	class URotatingMovementComponent* Rotator;
-
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess))
 	float SpawnWaitingTime = 10;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess, ClampMin = 0, UIMax = 5))
 	// Consider this as a "how many tiles per seconds".
-	float Speed = 1.5f;
+	float Speed = 3.f;
 	
 	// When this reaches 1, it is set back to 0 and the ghost is snapped to the nearest tile.
 	// It is at this point the ghost's core logic determines the new path to take.
 	float TileProgress = 0;
 
+	// Handle for the frightened state.
+	FTimerHandle FrightenedHandle;
+
+	// Separate handle for the color blinking.
+	FTimerHandle ColorBlinkHandle;
+	
+
 	GhostState CurrentState = GhostState::Waiting;
 
 protected:
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, meta=(AllowPrivateAccess))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UStaticMeshComponent* PyramidMesh;
+	
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UMaterialInterface* OriginalMaterial;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UMaterialInterface* FrightenedMaterial;
+
+	
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly)
 	UMaterialInstanceDynamic* GhostMaterial;
 
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class URotatingMovementComponent* Rotator;
+
+	
 	
 	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn="true"))
 	AMazeManager* MazeManager;
@@ -92,23 +108,36 @@ public:
 
 	
 private:
-	const UMazeTile* SnapToClosestTile();
+	// Unique to each ghosts, and each overload!
+	virtual void SetGhostProperties(bool reinstanceMaterial)
+	{ checkf(false, TEXT("Should not reach here!")); };
+	
+	// Returns TRUE as soon as the ghost is free to go.
+	bool CountDownSpawnTimer(const float deltaTime);
 
+
+	const UMazeTile* SnapToClosestTile();
 
 	virtual const UMazeTile* ProcessStatusTile();
 	
 	virtual const UMazeTile* GetChaseTile()
-	{ checkf(false, TEXT("Should not reach here!")); return nullptr; };
-
-
-	// Returns TRUE as soon as the ghost is free to go.
-	bool CountDownSpawnTimer(const float deltaTime);
+	{ checkf(false, TEXT("Should not reach here!")); return nullptr; }
+	
 	
 	// Stuck or starting
 	Direction::CardinalDirection DetermineStartingDirection();
 	
 	// Already in motion
 	Direction::CardinalDirection DetermineNewDirection();
+
+	// Frightened
+	Direction::CardinalDirection RandomDirection();
+
+
+	void BlueFrighten();
+	void WhiteFrighten();
+
+	void EndFrighten();
 
 protected:
 	virtual void BeginPlay() override;
@@ -117,4 +146,10 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	
+	// Frightens the ghost for a set period of time.
+	void Frighten(float duration = 10.f);
+
+	// Eats the ghost.
+	void Eat();
 };

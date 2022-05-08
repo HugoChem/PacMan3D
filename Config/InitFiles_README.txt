@@ -9,16 +9,18 @@ E Ghost exit point. Should be near a spawner.
 . Classic pac dot
 o Power pellet
 
-P Player spawn (only one)
+P Offset player spawn (only one)
+p Fixed player spawn
 
-G Grand spawner (Spawns the classic 5x3 ghost spawner)
-g Ghost spawn point [Invisible]
+H Grand spawner (Spawns the classic 8x5 ghost spawner, does NOT double as a ghost spawn point!)
+h Little spawner (Spawns a 5x3 ghost spawner, AND doubles as a spawn point.)
 
-Classic spawner schematic:
+G Ghost spawn point [Invisible]
+
+Small spawner schematic:
 XXEXX
-XgGgX
+XghgX
 XXXXX
-
 
 ==========================
 ========= GHOSTS =========
@@ -29,7 +31,7 @@ On the next line after a ghost, input the time before it leaves the ghost spawne
 
 -- Classics --
 
-Blinky 	- The pure classic, chases PacMan directly.
+Blinky 	- The chasser, chases PacMan directly.
 Pinky 	- The embusher, tries to approach PacMan from the front.
 Inky	- The trickster, has for target the oposite spot of blinky in relative to PacMan. [WARNING: You cannot put Inky first. He pairs up with the *previous* ghost you've inputed. Meaning you may also pair it with other ghosts!]
 Clyde	- The.. stupid- Ahem, behaves like Blinky but scatters whenever he gets too close. (8 tiles away.)

@@ -12,9 +12,10 @@ class NEOPACMAN3D_API ABlinky : public AGhostBase
 {
 	GENERATED_BODY()
 
+private:
+	virtual void SetGhostProperties(bool reinstanceMaterial) override;
+
 protected:
-	virtual void BeginPlay() override;
-	
 	virtual const UMazeTile* GetChaseTile() override;
 	
 };

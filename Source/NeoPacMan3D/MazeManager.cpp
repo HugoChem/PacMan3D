@@ -9,7 +9,16 @@
 #include "Clyde.h"
 
 #include "PacMan.h"
+
+#include "Engine/StaticMeshActor.h"
 #include "Kismet/GameplayStatics.h"
+
+
+void UMazeTile::Empty()
+{
+	Intern.Interior = MazeNode::Empty;
+	Intern.MeshActor->Destroy();
+}
 
 // Sets default values
 AMazeManager::AMazeManager()
@@ -19,6 +28,8 @@ AMazeManager::AMazeManager()
 
 	MazeManagerRoot = CreateDefaultSubobject<USceneComponent>("Maze manager root");
 	SetRootComponent(MazeManagerRoot);
+
+	RootComponent->SetMobility(EComponentMobility::Movable);
 }
 
 void AMazeManager::ConstructPacMap(TArray<UMazeTile*>& ghostSpawns, APacMan*& pacMan)
@@ -40,41 +51,98 @@ void AMazeManager::ConstructPacMap(TArray<UMazeTile*>& ghostSpawns, APacMan*& pa
 		
 		for (int j = 0; j < MazeCollumns; ++j)
 		{
+			const FVector mazePos = IndexToVector(i, j);
+			
 			switch (mazeLine[j])
 			{
 			case '@':
-				Tiles[i][j] = NewObject<UMazeTile>()->Node(MazeNode(CreatePacWall(i, j), i, j, MazeNode::Wall)); break;
+				Tiles[i][j] = NewObject<UMazeTile>()
+				->Node(MazeNode(i, j, MazeNode::Wall, CreatePacWall(mazePos)));
+				
+				break;
 
 			case 'X':
-				Tiles[i][j] = NewObject<UMazeTile>()->Node(MazeNode(i, j, MazeNode::Wall)); break;
+				Tiles[i][j] = NewObject<UMazeTile>()
+				->Node(MazeNode(i, j, MazeNode::Wall));
+				
+				break;
 
 			case '~':
-				Tiles[i][j] = NewObject<UMazeTile>()->Node(MazeNode(i, j, MazeNode::GhostWall)); break;
+				Tiles[i][j] = NewObject<UMazeTile>()
+				->Node(MazeNode(i, j, MazeNode::GhostWall));
+
+				break;
 
 			case '?':
-				Tiles[i][j] = NewObject<UMazeTile>()->Node(MazeNode(CreateGhostWall(i, j), i, j, MazeNode::GhostWall)); break;
+				Tiles[i][j] = NewObject<UMazeTile>()
+				->Node(MazeNode(i, j, MazeNode::GhostWall, CreateGhostWall(mazePos)));
+
+				break;
 
 				
 			case '.':
-				Tiles[i][j] = NewObject<UMazeTile>()->Node(MazeNode(CreatePacDot (i, j), i, j, MazeNode::PacDot)); break;
+				Tiles[i][j] = NewObject<UMazeTile>()
+				->Node(MazeNode(i, j, MazeNode::PacDot, CreatePacDot(mazePos)));
+
+				break;
+
+			case 'o':
+				Tiles[i][j] = NewObject<UMazeTile>()
+				->Node(MazeNode(i, j, MazeNode::PowerPellet, CreatePowerPellet(mazePos)));
+
+				break;
+			
+
+			case 'p':
+				Tiles[i][j] = NewObject<UMazeTile>()
+				->Node(MazeNode(i, j, MazeNode::PlayerSpawn));
+
+				pacMan = PlacePacMan(mazePos, false);
+
+				break;
 
 				
 			case 'P':
-				Tiles[i][j] = NewObject<UMazeTile>()->Node(MazeNode(i, j, MazeNode::PlayerSpawn));
-				pacMan = PlacePacMan(i, j);
-				pacMan->CurrentTile = Tiles[i][j];
+				Tiles[i][j] = NewObject<UMazeTile>()
+				->Node(MazeNode(i, j, MazeNode::PlayerSpawn));
+
+				pacMan = PlacePacMan(mazePos, true);
+
 				break;
 
 				
 			case 'G':
-				Tiles[i][j] = NewObject<UMazeTile>()->Node(MazeNode(CreateGhostHouse(i, j), i, j, MazeNode::GhostSpawn));
-				ghostSpawns.Add(Tiles[i][j]); break;
+				Tiles[i][j] = NewObject<UMazeTile>()
+				->Node(MazeNode(i, j, MazeNode::GhostSpawn));
 
-			case 'g':
-				Tiles[i][j] = NewObject<UMazeTile>()->Node(MazeNode(i, j, MazeNode::GhostSpawn));
-				ghostSpawns.Add(Tiles[i][j]); break;
+				ghostSpawns.Add(Tiles[i][j]);
 
-			case 'E': Tiles[i][j] = NewObject<UMazeTile>()->Node(MazeNode(i, j, MazeNode::SpawnerExit)); break;
+				break;
+
+				
+			case 'h':
+				Tiles[i][j] = NewObject<UMazeTile>()
+				->Node(MazeNode(i, j, MazeNode::Empty));
+
+				CreateLittleGhostHouse(mazePos);
+				ghostSpawns.Add(Tiles[i][j]);
+
+				break;
+
+			case 'H':
+				Tiles[i][j] = NewObject<UMazeTile>()
+				->Node(MazeNode(i, j, MazeNode::Empty));
+
+				CreateBigGhostHouse(mazePos);
+
+				break;
+
+				
+			case 'E':
+				Tiles[i][j] = NewObject<UMazeTile>()
+				->Node(MazeNode(i, j, MazeNode::SpawnerExit));
+
+				break;
 				
 				
 			default: Tiles[i][j] =  NewObject<UMazeTile>()->Node(MazeNode(i, j, MazeNode::Empty)); break;
@@ -139,6 +207,36 @@ void AMazeManager::PlaceGhosts(const TArray<UMazeTile*>& ghostSpawns, const APac
 	}
 }
 
+void AMazeManager::RefineWalls()
+{
+	for (int i = 0; i < MazeRows; ++i)
+	{
+		for (int j = 0; j < MazeCollumns; ++j)
+		{
+			if (Tiles[i][j]->Node().Interior == MazeNode::Wall)
+			{
+				FVector displacement = {0, 0, 0};
+
+				if (GetNeighborTile(Tiles[i][j], Direction::Up)		->Node().Interior == MazeNode::Wall)
+					displacement += FVector(-50.f, 0, 0);
+
+				if (GetNeighborTile(Tiles[i][j], Direction::Right)	->Node().Interior == MazeNode::Wall)
+					displacement += FVector(0, -50.f, 0);
+
+				if (GetNeighborTile(Tiles[i][j], Direction::Down)	->Node().Interior == MazeNode::Wall)
+					displacement += FVector(50.f, 0, 0);
+
+				if (GetNeighborTile(Tiles[i][j], Direction::Left)	->Node().Interior == MazeNode::Wall)
+					displacement += FVector(0, 50.f, 0);
+
+
+				if (AStaticMeshActor* wallMesh = Tiles[i][j]->Node().MeshActor)
+					wallMesh->AddActorWorldOffset(displacement);
+			}
+		}
+	}
+}
+
 // Called when the game starts or when spawned
 void AMazeManager::BeginPlay()
 {
@@ -149,7 +247,11 @@ void AMazeManager::BeginPlay()
 
 	ConstructPacMap(ghostSpawns, pacMan);
 
+	pacMan->UpdateCurrentTile();
+	
 	PlaceGhosts(ghostSpawns, pacMan);
+
+	//RefineWalls();
 }
 
 const UMazeTile* AMazeManager::GetNearestTile(const FVector& nearestTo) const
@@ -230,7 +332,20 @@ const UMazeTile* AMazeManager::GetNeighborTile (const UMazeTile* origin, const D
 		else
 			return Tiles[origin->Node().RowIndex][origin->Node().CollumnIndex - stepsInDir];
 
-	default: return nullptr;
+	default: return origin;
 	}
+}
+
+void AMazeManager::EmptyTile(const UMazeTile* targetTile) const
+{
+	if (targetTile->Node().Interior == MazeNode::PowerPellet)
+	{
+		for (AGhostBase* ghost : Ghosts)
+		{
+			ghost->Frighten();
+		}
+	}
+	
+	Tiles[targetTile->Node().RowIndex][targetTile->Node().CollumnIndex]->Empty();
 }
 

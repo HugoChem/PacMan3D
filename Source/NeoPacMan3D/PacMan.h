@@ -22,22 +22,42 @@ class NEOPACMAN3D_API APacMan : public APawn
 	// Consider this as a "how many tiles per seconds".
 	float Speed = 1;
 	
-	
+	UPROPERTY(BlueprintReadWrite, meta=(AllowPrivateAccess))
 	// When this reaches 1, it is set back to 0 and pac-man is snapped to the nearest tile.
 	// It is at this point the next direction is applied (if valid).
 	float TileProgress = 0;
 
+	UPROPERTY(BlueprintReadOnly, meta=(AllowPrivateAccess))
+	const UMazeTile* CurrentTile;
+	
 	Direction::CardinalDirection CurrentDir = Direction::None;
 
 	Direction::CardinalDirection NextDir = Direction::None;
 	
+
+	bool MunchFlip;
+
+	UPROPERTY()
+	USoundWave* Munch1;
+
+	UPROPERTY()
+	USoundWave* Munch2;
+	
 public:
+	static constexpr float EatingDistance = 20.f;
+
+
 	// Sets default values for this pawn's properties
 	APacMan();
+
+	UFUNCTION(BlueprintCallable)
+	const UMazeTile* UpdateCurrentTile()
+	{ CurrentTile = MazeManager->GetNearestTile(GetActorLocation()); return CurrentTile; }
 	
-	UPROPERTY()
+	UFUNCTION(BlueprintCallable)
 	// Last known tile PacMan was on.
-	const UMazeTile* CurrentTile;
+	const UMazeTile* GetCurrentTile() const
+	{ return TileProgress > 0.5f ? MazeManager->GetNearestTile(GetActorLocation()) : CurrentTile; }
 	
 	//The direction the player is facing
 	Direction::CardinalDirection GetFacingDir() const

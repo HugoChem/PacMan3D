@@ -11,12 +11,16 @@ UCLASS()
 class NEOPACMAN3D_API AInky : public AGhostBase
 {
 	GENERATED_BODY()
-	
+
+	UPROPERTY()
 	const AGhostBase* LeaderGhost;
 
+	static constexpr FLinearColor Cyan {0.f, 1.f, 1.f};
+
+private:
+	virtual void SetGhostProperties(bool reinstanceMaterial) override;
+
 protected:
-	virtual void BeginPlay() override;
-	
 	virtual const UMazeTile* GetChaseTile() override;
 
 public:

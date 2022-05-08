@@ -2,6 +2,8 @@
 
 
 #include "GhostBase.h"
+
+#include "PacMan.h"
 #include "GameFramework/RotatingMovementComponent.h"
 
 // Sets default values
@@ -23,16 +25,42 @@ AGhostBase::AGhostBase()
 	if (mesh.Succeeded())
 		PyramidMesh->SetStaticMesh(mesh.Object);
 
-	static ConstructorHelpers::FObjectFinder<UMaterialInstance> material(TEXT("/Game/Ghosts/GhostMaterial.GhostMaterial"));
-	if (material.Succeeded())
-		PyramidMesh->SetMaterial(0, material.Object);
+	
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> coreMaterial(TEXT("/Game/Ghosts/GhostMaterial.GhostMaterial"));
+	if (coreMaterial.Succeeded())
+	{
+		OriginalMaterial = coreMaterial.Object;
+		PyramidMesh->SetMaterial(0, coreMaterial.Object);
+	}
+	
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> frightenedMaterial(TEXT("/Engine/EngineDebugMaterials/WireframeMaterial.WireframeMaterial"));
+	if (frightenedMaterial.Succeeded())
+		FrightenedMaterial = frightenedMaterial.Object;
 
 	
 	Rotator = CreateDefaultSubobject<URotatingMovementComponent>("Rotator");
-	Rotator->RotationRate = { 0, 60, 0 };
 	Rotator->bRotationInLocalSpace = false;
-
 }
+
+
+bool AGhostBase::CountDownSpawnTimer(const float deltaTime)
+{
+	if (CurrentState == GhostState::Waiting)
+	{
+		SpawnWaitingTime -= deltaTime;
+		
+		if (SpawnWaitingTime <= 0)
+		{
+			CurrentState = GhostState::Exiting;
+			return true;
+		}
+
+		return false;
+	}
+
+	return true;
+}
+
 
 const UMazeTile* AGhostBase::SnapToClosestTile()
 {
@@ -64,14 +92,15 @@ const UMazeTile* AGhostBase::ProcessStatusTile()
 	case GhostState::Chase:			return GetChaseTile();
 	case GhostState::Scatter:		return ScatterTile;
 
-	case GhostState::Frightened:	return nullptr;
+	case GhostState::Frightened:	checkf(false, TEXT("Shouldn't be here..")) return nullptr;
 
 
 	case GhostState::Eaten:
 		if (CurrentTile == SpawnTile)
 		{
 			CurrentState = GhostState::Exiting;
-			CurrentDir = Direction::None;
+			Speed /= 2;
+			SetGhostProperties(true);
 			return ExitTile;
 		}
 		else return SpawnTile;
@@ -81,30 +110,78 @@ const UMazeTile* AGhostBase::ProcessStatusTile()
 	}
 }
 
-bool AGhostBase::CountDownSpawnTimer(const float deltaTime)
-{
-	if (CurrentState == GhostState::Waiting)
-	{
-		SpawnWaitingTime -= deltaTime;
-		
-		if (SpawnWaitingTime <= 0)
-		{
-			CurrentState = GhostState::Exiting;
-			return true;
-		}
 
-		return false;
+Direction::CardinalDirection AGhostBase::DetermineStartingDirection()
+{
+	const UMazeTile* currentTile = MazeManager->GetNearestTile(GetActorLocation());
+	const UMazeTile* target = ProcessStatusTile();
+
+	float closestDirDistToTarget = MAX_FLT;
+	Direction::CardinalDirection closestDirToTarget = !CurrentDir;
+
+
+	const UMazeTile* upTile		= MazeManager->GetNeighborTile(currentTile, Direction::Up);
+	const UMazeTile* rightTile	= MazeManager->GetNeighborTile(currentTile, Direction::Right);
+	const UMazeTile* downTile	= MazeManager->GetNeighborTile(currentTile, Direction::Down);
+	const UMazeTile* leftTile	= MazeManager->GetNeighborTile(currentTile, Direction::Left);
+
+
+	const int tilesToAvoid = MazeNode::Wall | MazeNode::MagicWall |
+		((CurrentState == GhostState::Exiting || CurrentState == GhostState::Eaten) ? 0 : MazeNode::SpawnerExit);
+	
+	
+	if ( (upTile->Node().Interior & tilesToAvoid) == 0 )
+	{
+		closestDirDistToTarget = FVector::Dist(**upTile, **target);
+		closestDirToTarget = Direction::Up;
 	}
 
-	return true;
-}
+	if ( (rightTile->Node().Interior & tilesToAvoid) == 0 )
+	{
+		const float rightDist = FVector::Dist(**rightTile, **target);
 
+		if (rightDist < closestDirDistToTarget)
+		{
+			closestDirDistToTarget = rightDist;
+			closestDirToTarget = Direction::Right;	
+		}
+	}
+
+	if ( (downTile->Node().Interior & tilesToAvoid) == 0 )
+	{
+		const float downDist = FVector::Dist(**rightTile, **target);
+
+		if (downDist < closestDirDistToTarget)
+		{
+			closestDirDistToTarget = downDist;
+			closestDirToTarget = Direction::Down;	
+		}
+	}
+
+	if ( (leftTile->Node().Interior & tilesToAvoid) == 0 )
+	{
+		const float leftDist = FVector::Dist(**leftTile, **target);
+
+		if (leftDist < closestDirDistToTarget)
+		{
+			closestDirDistToTarget = leftDist;
+			closestDirToTarget = Direction::Left;	
+		}
+	}
+
+	return closestDirToTarget;
+}
 
 Direction::CardinalDirection AGhostBase::DetermineNewDirection()
 {
 	const UMazeTile* target = ProcessStatusTile();
-	
 
+	if (!target)
+	{
+		WhiteFrighten();
+		return RandomDirection();
+	}
+	
 	float closestDirDistToTarget = MAX_FLT;
 	Direction::CardinalDirection closestDirToTarget = !CurrentDir;
 
@@ -113,7 +190,8 @@ Direction::CardinalDirection AGhostBase::DetermineNewDirection()
 	const UMazeTile* rightTile	= MazeManager->GetNeighborTile(CurrentTile, CurrentDir++);
 	const UMazeTile* leftTile	= MazeManager->GetNeighborTile(CurrentTile, --CurrentDir);
 	
-	const int tilesToAvoid = MazeNode::Wall | MazeNode::MagicWall | (CurrentState == GhostState::Exiting ? 0 : MazeNode::SpawnerExit); 
+	const int tilesToAvoid = MazeNode::Wall | MazeNode::MagicWall |
+		((CurrentState == GhostState::Exiting || CurrentState == GhostState::Eaten) ? 0 : MazeNode::SpawnerExit);
 
 	
 	if ( (frontTile->Node().Interior & tilesToAvoid) == 0 )
@@ -147,61 +225,32 @@ Direction::CardinalDirection AGhostBase::DetermineNewDirection()
 	return closestDirToTarget;
 }
 
-Direction::CardinalDirection AGhostBase::DetermineStartingDirection()
+Direction::CardinalDirection AGhostBase::RandomDirection()
 {
-	const UMazeTile* currentTile = MazeManager->GetNearestTile(GetActorLocation());
-	const UMazeTile* target = ProcessStatusTile();
+	const UMazeTile* frontTile	= MazeManager->GetNeighborTile(CurrentTile, CurrentDir);
+	const UMazeTile* rightTile	= MazeManager->GetNeighborTile(CurrentTile, CurrentDir++);
+	const UMazeTile* leftTile	= MazeManager->GetNeighborTile(CurrentTile, --CurrentDir);
 
-	float closestDirDistToTarget = MAX_FLT;
-	Direction::CardinalDirection closestDirToTarget = !CurrentDir;
-
-
-	const UMazeTile* upTile		= MazeManager->GetNeighborTile(currentTile, Direction::Up);
-	const UMazeTile* rightTile	= MazeManager->GetNeighborTile(currentTile, Direction::Right);
-	const UMazeTile* downTile	= MazeManager->GetNeighborTile(currentTile, Direction::Down);
-	const UMazeTile* leftTile	= MazeManager->GetNeighborTile(currentTile, Direction::Left);
+	TArray<Direction::CardinalDirection> validEscapes;
+	
+	constexpr int tilesToAvoid = MazeNode::Wall | MazeNode::MagicWall | MazeNode::SpawnerExit; 
 
 	
-	if ( (upTile->Node().Interior & (MazeNode::Wall | MazeNode::MagicWall)) == 0 )
-	{
-		closestDirDistToTarget = FVector::Dist(**upTile, **target);
-		closestDirToTarget = Direction::Up;
-	}
+	if ( (frontTile->Node().Interior & tilesToAvoid) == 0 )
+		validEscapes.Add(CurrentDir);
 
-	if ( (rightTile->Node().Interior & (MazeNode::Wall | MazeNode::MagicWall)) == 0 )
-	{
-		const float rightDist = FVector::Dist(**rightTile, **target);
+	if ( (rightTile->Node().Interior & tilesToAvoid) == 0 )
+		validEscapes.Add(CurrentDir++);
 
-		if (rightDist < closestDirDistToTarget)
-		{
-			closestDirDistToTarget = rightDist;
-			closestDirToTarget = Direction::Right;	
-		}
-	}
+	if ( (leftTile->Node().Interior & tilesToAvoid) == 0 )
+		validEscapes.Add(--CurrentDir);
 
-	if ( (downTile->Node().Interior & (MazeNode::Wall | MazeNode::MagicWall)) == 0 )
-	{
-		const float downDist = FVector::Dist(**rightTile, **target);
 
-		if (downDist < closestDirDistToTarget)
-		{
-			closestDirDistToTarget = downDist;
-			closestDirToTarget = Direction::Down;	
-		}
-	}
-
-	if ( (leftTile->Node().Interior & (MazeNode::Wall | MazeNode::MagicWall)) == 0 )
-	{
-		const float leftDist = FVector::Dist(**leftTile, **target);
-
-		if (leftDist < closestDirDistToTarget)
-		{
-			closestDirDistToTarget = leftDist;
-			closestDirToTarget = Direction::Left;	
-		}
-	}
-
-	return closestDirToTarget;
+	// TL;DR : If 1, return the first index, if more, return a random, if 0 go back.
+	return
+	validEscapes.Num() > 0 ?
+		(validEscapes.Num() > 1 ? validEscapes[FMath::RandRange(0, validEscapes.Num() -1)] : validEscapes[0])
+		: !CurrentDir;
 }
 
 
@@ -210,7 +259,7 @@ void AGhostBase::BeginPlay()
 {
 	Super::BeginPlay();
 
-	GhostMaterial = PyramidMesh->CreateDynamicMaterialInstance(0);
+	SetGhostProperties(true);
 }
 
 // Called every frame
@@ -237,9 +286,73 @@ void AGhostBase::Tick(float DeltaTime)
 		if (TileProgress >= 1.f)
 		{
 			SnapToClosestTile();
-			CurrentDir = DetermineNewDirection();
-
+			CurrentDir = CurrentState != GhostState::Frightened ? DetermineNewDirection() : RandomDirection();
 		}
 	}
+
+	if (CurrentState == GhostState::Frightened &&
+		FVector::Dist(GetActorLocation(), PacMan->GetActorLocation()) < APacMan::EatingDistance)
+	{ Eat(); }
+}
+
+void AGhostBase::Frighten(const float duration)
+{
+	if ( (CurrentState == GhostState::Chase || CurrentState == GhostState::Scatter) && (CurrentTile->Node().Interior != MazeNode::SpawnerExit) )
+	{
+		CurrentState = GhostState::Frightened;
+
+		CurrentDir = !CurrentDir;
+		TileProgress = 1 - TileProgress;
+		Speed /= 2;
+
+		BlueFrighten();
+		
+		Rotator->RotationRate = { 0, -30.f, 0 };
+		
+		GetWorldTimerManager().SetTimer(FrightenedHandle, this, &AGhostBase::EndFrighten, duration, false);
+		GetWorldTimerManager().SetTimer(ColorBlinkHandle, this, &AGhostBase::WhiteFrighten, duration / 2.f, false);
+	}	
+}
+
+void AGhostBase::BlueFrighten()
+{
+	GhostMaterial->SetVectorParameterValue("FloorColor", FLinearColor::Blue);
+	GhostMaterial->SetVectorParameterValue("GrooveColor", FLinearColor::Blue);
+	GhostMaterial->SetVectorParameterValue("TrimColor", FLinearColor::Blue);
+	
+	GhostMaterial->SetVectorParameterValue("GlowColor", FLinearColor::Blue * 3000);
+
+	GetWorldTimerManager().SetTimer(ColorBlinkHandle, this, &AGhostBase::WhiteFrighten, 1.f, false);
+}
+
+void AGhostBase::WhiteFrighten()
+{
+	GhostMaterial->SetVectorParameterValue("FloorColor", FLinearColor::White);
+	GhostMaterial->SetVectorParameterValue("GrooveColor", FLinearColor::White);
+	GhostMaterial->SetVectorParameterValue("TrimColor", FLinearColor::White);
+	
+	GhostMaterial->SetVectorParameterValue("GlowColor", FLinearColor::White * 3000);
+
+	GetWorldTimerManager().SetTimer(ColorBlinkHandle, this, &AGhostBase::BlueFrighten, 1.f, false);
+}
+
+void AGhostBase::Eat()
+{
+	CurrentState = GhostState::Eaten;
+	Speed *= 4;
+	
+	GhostMaterial = PyramidMesh->CreateDynamicMaterialInstance(0, FrightenedMaterial);
+
+	GetWorldTimerManager().ClearTimer(FrightenedHandle);
+	GetWorldTimerManager().ClearTimer(ColorBlinkHandle);
+}
+
+void AGhostBase::EndFrighten()
+{
+	CurrentState = GhostState::Chase;
+	Speed *= 2;
+	
+	GetWorldTimerManager().ClearTimer(ColorBlinkHandle);
+	SetGhostProperties(false);
 }
 
